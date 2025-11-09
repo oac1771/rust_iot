@@ -1,0 +1,1 @@
+Taken from this example: https://github.com/embassy-rs/trouble/blob/main/examples/esp32/src/bin/ble_scanner.rs
