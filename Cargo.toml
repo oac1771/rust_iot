@@ -1,9 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-  "bin/iot",
-  "bin/cli"
-]
+members = ["bin/iot"]
 
 [workspace.package]
 edition = "2024"
@@ -11,7 +8,6 @@ version = "0.1.0"
 rust-version = "1.86"
 
 [workspace.dependencies]
-btleplug = "0.11.8"
 embassy-executor = "0.9.1"
 esp-bootloader-esp-idf = "0.4.0"
 esp-backtrace = { version = "0.18.1", features = [ "panic-handler", "println" ] }
@@ -26,6 +22,12 @@ embassy-futures = "0.1.1"
 embassy-time = "0.5"
 heapless = "0.9"
 log = { version = "0.4" }
+# embedded-storage-async = { version = "0.4.1", optional = true }
+# sequential-storage = { version = "5.0.0", optional = true }
+
+# for 'ble_bas_peripheral_bonding'
+embassy-embedded-hal = "0.5.0"
+esp-storage = { version = "0.8.1" }
 
 
 [profile.dev]
