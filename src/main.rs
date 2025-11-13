@@ -20,7 +20,8 @@ async fn main(_s: Spawner) {
     esp_alloc::heap_allocator!(size: 72 * 1024);
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     #[cfg(target_arch = "riscv32")]
-    let software_interrupt = esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
+    let software_interrupt =
+        esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
 
     esp_rtos::start(
         timg0.timer0,
@@ -34,5 +35,4 @@ async fn main(_s: Spawner) {
     let controller: ExternalController<_, 20> = ExternalController::new(connector);
 
     run(controller).await;
-
 }

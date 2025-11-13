@@ -1,67 +1,63 @@
-use bt_hci::cmd::le::LeSetScanParams;
+use bt_hci::cmd::le::*;
 use bt_hci::controller::ControllerCmdSync;
-use core::cell::RefCell;
 use embassy_futures::join::join;
 use embassy_time::{Duration, Timer};
-use heapless::Deque;
-use trouble_host::prelude::*;
 use log::info;
-
-/// Max number of connections
-const CONNECTIONS_MAX: usize = 1;
-const L2CAP_CHANNELS_MAX: usize = 1;
+use trouble_host::prelude::*;
 
 pub async fn run<C>(controller: C)
 where
-    C: Controller + ControllerCmdSync<LeSetScanParams>,
+    C: Controller
+        + for<'t> ControllerCmdSync<LeSetExtAdvData<'t>>
+        + ControllerCmdSync<LeClearAdvSets>
+        + ControllerCmdSync<LeSetExtAdvParams>
+        + ControllerCmdSync<LeSetAdvSetRandomAddr>
+        + ControllerCmdSync<LeReadNumberOfSupportedAdvSets>
+        + for<'t> ControllerCmdSync<LeSetExtAdvEnable<'t>>
+        + for<'t> ControllerCmdSync<LeSetExtScanResponseData<'t>>,
 {
-    // Using a fixed "random" address can be useful for testing. In real scenarios, one would
-    // use e.g. the MAC 6 byte array as the address (how to get that varies by the platform).
-    let address: Address = Address::random([0xff, 0x8f, 0x1b, 0x05, 0xe4, 0xff]);
+    let address: Address = Address::random([0xff, 0x8f, 0x1a, 0x05, 0xe4, 0xff]);
     info!("Our address = {:?}", address);
 
-    let mut resources: HostResources<DefaultPacketPool, CONNECTIONS_MAX, L2CAP_CHANNELS_MAX> = HostResources::new();
+    let mut resources: HostResources<DefaultPacketPool, 0, 0> = HostResources::new();
     let stack = trouble_host::new(controller, &mut resources).set_random_address(address);
-
     let Host {
-        central, mut runner, ..
+        mut peripheral,
+        mut runner,
+        ..
     } = stack.build();
 
-    let printer = Printer {
-        seen: RefCell::new(Deque::new()),
-    };
+    let mut adv_data = [0; 31];
+    let len = AdStructure::encode_slice(
+        &[
+            AdStructure::CompleteLocalName(b"Trouble Advert"),
+            AdStructure::Flags(LE_GENERAL_DISCOVERABLE | BR_EDR_NOT_SUPPORTED),
+        ],
+        &mut adv_data[..],
+    )
+    .unwrap();
 
-    let mut scanner = Scanner::new(central);
-    let _ = join(runner.run_with_handler(&printer), async {
-        let mut config = ScanConfig::default();
-        config.active = true;
-        config.phys = PhySet::M1;
-        config.interval = Duration::from_secs(1);
-        config.window = Duration::from_secs(1);
-        let mut _session = scanner.scan(&config).await.unwrap();
-        // Scan forever
+    info!("Starting advertising");
+    let _ = join(runner.run(), async {
         loop {
-            Timer::after(Duration::from_secs(1)).await;
+            let mut params = AdvertisementParameters::default();
+            params.interval_min = Duration::from_millis(100);
+            params.interval_max = Duration::from_millis(100);
+            let _advertiser = peripheral
+                .advertise(
+                    &params,
+                    Advertisement::ConnectableScannableUndirected {
+                        adv_data: &adv_data[..len],
+                        scan_data: &[],
+                    },
+                )
+                .await
+                .unwrap();
+            loop {
+                info!("Still running");
+                Timer::after(Duration::from_secs(10)).await;
+            }
         }
     })
     .await;
-}
-
-struct Printer {
-    seen: RefCell<Deque<BdAddr, 128>>,
-}
-
-impl EventHandler for Printer {
-    fn on_adv_reports(&self, mut it: LeAdvReportsIter<'_>) {
-        let mut seen = self.seen.borrow_mut();
-        while let Some(Ok(report)) = it.next() {
-            if seen.iter().find(|b| b.raw() == report.addr.raw()).is_none() {
-                info!("discovered: {:?}", report.addr);
-                if seen.is_full() {
-                    seen.pop_front();
-                }
-                seen.push_back(report.addr).unwrap();
-            }
-        }
-    }
 }
