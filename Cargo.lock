@@ -1634,6 +1634,7 @@ dependencies = [
  "embassy-embedded-hal",
  "embassy-executor",
  "embassy-futures",
+ "embassy-sync 0.7.2",
  "embassy-time",
  "embedded-storage-async",
  "esp-alloc",
@@ -1647,6 +1648,7 @@ dependencies = [
  "heapless 0.9.1",
  "log",
  "sequential-storage",
+ "static_cell",
  "trouble-host",
 ]
 
