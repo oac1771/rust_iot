@@ -1,6 +1,6 @@
 use embassy_futures::join::join;
 use embassy_futures::select::select;
-use embassy_time::Timer;
+use embassy_time::{Duration, Timer};
 use log::{warn, info};
 use trouble_host::prelude::*;
 
@@ -153,7 +153,11 @@ async fn advertise<'values, 'server, C: Controller>(
     )?;
     let advertiser = peripheral
         .advertise(
-            &Default::default(),
+            &AdvertisementParameters {
+                interval_min: Duration::from_millis(20),
+                interval_max: Duration::from_millis(20),
+                ..Default::default()
+            },
             Advertisement::ConnectableScannableUndirected {
                 adv_data: &advertiser_data[..len],
                 scan_data: &[],
