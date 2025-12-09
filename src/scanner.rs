@@ -19,11 +19,6 @@ struct Server {
 /// Battery service
 #[gatt_service(uuid = service::BATTERY)]
 struct BatteryService {
-    /// Battery Level
-    #[descriptor(uuid = descriptors::VALID_RANGE, read, value = [0, 100])]
-    #[descriptor(uuid = descriptors::MEASUREMENT_DESCRIPTION, name = "hello", read, value = "Battery Level")]
-    #[characteristic(uuid = characteristic::BATTERY_LEVEL, read, notify, value = 10)]
-    level: u8,
     #[characteristic(uuid = "408813df-5dd4-1f87-ec11-cdb001100000", write, read, notify)]
     status: bool,
 }
@@ -103,20 +98,20 @@ async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
 /// This function will handle the GATT events and process them.
 /// This is how we interact with read and write requests.
 async fn gatt_events_task<P: PacketPool>(server: &Server<'_>, conn: &GattConnection<'_, '_, P>) -> Result<(), Error> {
-    let level = server.battery_service.level;
+    let status = server.battery_service.status;
     let reason = loop {
         match conn.next().await {
             GattConnectionEvent::Disconnected { reason } => break reason,
             GattConnectionEvent::Gatt { event } => {
                 match &event {
                     GattEvent::Read(event) => {
-                        if event.handle() == level.handle {
-                            let value = server.get(&level);
+                        if event.handle() == status.handle {
+                            let value = server.get(&status);
                             info!("[gatt] Read Event to Level Characteristic: {:?}", value);
                         }
                     }
                     GattEvent::Write(event) => {
-                        if event.handle() == level.handle {
+                        if event.handle() == status.handle {
                             info!("[gatt] Write Event to Level Characteristic: {:?}", event.data());
                         }
                     }
@@ -179,12 +174,10 @@ async fn custom_task<C: Controller, P: PacketPool>(
     conn: &GattConnection<'_, '_, P>,
     stack: &Stack<'_, C, P>,
 ) {
-    let mut tick: u8 = 0;
-    let level = server.battery_service.level;
+    let status = server.battery_service.status;
     loop {
-        tick = tick.wrapping_add(1);
-        info!("[custom_task] notifying connection of tick {}", tick);
-        if level.notify(conn, &tick).await.is_err() {
+        info!("[custom_task] notifying connection of status");
+        if status.notify(conn, &true).await.is_err() {
             info!("[custom_task] error notifying connection");
             break;
         };
