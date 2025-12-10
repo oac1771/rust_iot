@@ -1,69 +1,44 @@
-[package]
-edition = "2024"
-name    = "rust_iot"
-version = "0.1.0"
-rust-version = "1.85"
+[workspace]
+resolver = "2"
+members = [
+    "bin/iot",
+]
 
-[dependencies]
+[workspace.package]
+rust-version = "1.85"
+version = "0.1.0"
+edition = "2024"
+
+[workspace.dependencies]
 bt-hci = { version = "0.6" }
-defmt = { version = "1.0.1", optional = true }
+defmt = { version = "1.0.1" }
 embassy-executor = "0.9.1"
 embassy-sync = { version = "0.7" }
 embassy-futures = "0.1.1"
 embassy-time = "0.5"
-embedded-storage-async = { version = "0.4.1", optional = true }
+embedded-storage-async = { version = "0.4.1" }
 esp-bootloader-esp-idf = "0.4.0"
-esp-backtrace = { version = "0.18.1", features = [ "panic-handler", "println" ] }
-esp-hal = { version = "1.0.0", features = [ "unstable" ] }
+esp-backtrace = { version = "0.18.1" }
+esp-hal = { version = "1.0.0" }
 esp-alloc = { version = "0.9.0" }
-esp-println = { version = "0.16.0", features = ["log-04"] }
-esp-radio = { version = "0.17.0", features = ["ble", "log-04", "unstable"] }
-esp-rtos = { version = "0.2.0", features = ["embassy", "esp-alloc", "esp-radio", "log-04"] }
+esp-println = { version = "0.16.0" }
+esp-radio = { version = "0.17.0" }
+esp-rtos = { version = "0.2.0" }
 heapless = "0.9"
 log = { version = "0.4" }
-sequential-storage = { version = "5.0.0", optional = true }
+sequential-storage = { version = "5.0.0" }
 static_cell = "2"
-trouble-host = { version = "0.5.0", features = ["default-packet-pool-mtu-255", "scan", "log", "gatt"] }
-
+trouble-host = { version = "0.5.0" }
 
 # for 'ble_bas_peripheral_bonding'
 embassy-embedded-hal = "0.5.0"
 esp-storage = { version = "0.8.1" }
 
-[features]
-default = ["esp32c3"]
-esp32 = ["esp-hal/esp32", "esp-backtrace/esp32", "esp-println/esp32", "esp-radio/esp32", "esp-rtos/esp32", "esp-storage/esp32", "esp-bootloader-esp-idf/esp32"]
-esp32c2 = ["esp-hal/esp32c2", "esp-backtrace/esp32c2", "esp-println/esp32c2", "esp-radio/esp32c2", "esp-rtos/esp32c2", "esp-storage/esp32c2", "esp-bootloader-esp-idf/esp32c2"]
-esp32c3 = ["esp-hal/esp32c3", "esp-backtrace/esp32c3", "esp-println/esp32c3", "esp-radio/esp32c3", "esp-rtos/esp32c3", "esp-storage/esp32c3", "esp-bootloader-esp-idf/esp32c3"]
-esp32c6 = ["esp-hal/esp32c6", "esp-backtrace/esp32c6", "esp-println/esp32c6", "esp-radio/esp32c6", "esp-rtos/esp32c6", "esp-storage/esp32c6", "esp-bootloader-esp-idf/esp32c6"]
-esp32h2 = ["esp-hal/esp32h2", "esp-backtrace/esp32h2", "esp-println/esp32h2", "esp-radio/esp32h2", "esp-rtos/esp32h2", "esp-storage/esp32h2", "esp-bootloader-esp-idf/esp32h2"]
-esp32s3 = ["esp-hal/esp32s3", "esp-backtrace/esp32s3", "esp-println/esp32s3", "esp-radio/esp32s3", "esp-rtos/esp32s3", "esp-storage/esp32s3", "esp-bootloader-esp-idf/esp32s3"]
-defmt = [
-    "dep:defmt",
-    "trouble-host/defmt",
-    "bt-hci/defmt",
-    #"embedded-io/defmt-03",
-    #"embedded-hal/defmt-03"
-]
-log = [
-    "trouble-host/log",
-    "bt-hci/log"
-]
-security = [
-    "trouble-host/security",
-    "dep:sequential-storage",
-    "dep:embedded-storage-async"
-]
-std = []
-
-
 [profile.dev]
-# Rust debug is too slow.
-# For debug builds always builds with some optimization
 opt-level = "s"
 
 [profile.release]
-codegen-units = 1 # LLVM can perform better optimizations using a single thread
+codegen-units = 1 
 debug = 2
 debug-assertions = false
 incremental = false

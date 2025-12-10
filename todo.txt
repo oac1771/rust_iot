@@ -1,7 +1,6 @@
-Taken from this example: https://github.com/embassy-rs/trouble/blob/main/examples/esp32/src/bin/ble_scanner.rs
-
-trouble docs: https://github.com/embassy-rs/trouble/tree/main?tab=readme-ov-file
-
-
-for advertising data
-beacon: https://github.com/embassy-rs/trouble/blob/main/examples/apps/src/ble_beacon.rs
+split into multiple workspaces
+    - iot embassy machinery into bin
+    - services in their own 
+        - create custom uuids in uuid module
+add health service
+add light service to flash led
