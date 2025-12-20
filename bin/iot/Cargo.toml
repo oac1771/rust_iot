@@ -4,10 +4,14 @@ rust-version.workspace = true
 version.workspace = true
 edition.workspace = true
 
+[[bin]]
+name = "iot"
+path = "src/main.rs"
+
 [dependencies]
 bt-hci = { workspace = true }
 embassy-executor = { workspace = true }
-embassy-sync = { workspace = true}
+embassy-sync = { workspace = true }
 embassy-futures = { workspace = true }
 embassy-time = { workspace = true }
 esp-bootloader-esp-idf = { workspace = true }
@@ -26,6 +30,8 @@ trouble-host = { workspace = true, features = ["default-packet-pool-mtu-255", "s
 embassy-embedded-hal = { workspace = true }
 esp-storage = { workspace = true }
 
+# Workspace
+services = { workspace = true }
 
 [features]
 default = ["esp32c3"]

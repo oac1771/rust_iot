@@ -2,6 +2,7 @@ use embassy_futures::join::join;
 use embassy_futures::select::select;
 use embassy_time::{Duration, Timer};
 use log::{warn, info};
+use services::health::HealthService;
 use trouble_host::prelude::*;
 
 /// Max number of connections
@@ -13,15 +14,9 @@ const L2CAP_CHANNELS_MAX: usize = 2; // Signal + att
 // GATT Server definition
 #[gatt_server]
 struct Server {
-    battery_service: BatteryService,
+    health_service: HealthService,
 }
 
-/// Battery service
-#[gatt_service(uuid = service::BATTERY)]
-struct BatteryService {
-    #[characteristic(uuid = "408813df-5dd4-1f87-ec11-cdb001100000", write, read, notify)]
-    status: bool,
-}
 
 /// Run the BLE stack.
 pub async fn run<C>(controller: C)
@@ -42,7 +37,7 @@ where
     info!("Starting advertising and GATT service");
     let server = Server::new_with_config(GapConfig::Peripheral(PeripheralConfig {
         name: "TrouBLE",
-        appearance: &appearance::power_device::GENERIC_POWER_DEVICE,
+        appearance: &appearance::UNKNOWN,
     }))
     .unwrap();
 
@@ -94,7 +89,7 @@ async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
 /// This function will handle the GATT events and process them.
 /// This is how we interact with read and write requests.
 async fn gatt_events_task<P: PacketPool>(server: &Server<'_>, conn: &GattConnection<'_, '_, P>) -> Result<(), Error> {
-    let status = server.battery_service.status;
+    let status = server.health_service.status;
     let reason = loop {
         match conn.next().await {
             GattConnectionEvent::Disconnected { reason } => break reason,
@@ -134,14 +129,23 @@ async fn advertise<'values, 'server, C: Controller>(
     server: &'server Server<'values>,
 ) -> Result<GattConnection<'values, 'server, DefaultPacketPool>, BleHostError<C::Error>> {
     let mut advertiser_data = [0; 31];
-    let len = AdStructure::encode_slice(
+    let mut scan_data = [0; 31];
+
+    let scan_len = AdStructure::encode_slice(
+        &[
+            AdStructure::CompleteLocalName(name.as_bytes()),
+        ],
+        &mut scan_data,
+    )?;
+
+    let adv_len = AdStructure::encode_slice(
         &[
             AdStructure::Flags(LE_GENERAL_DISCOVERABLE | BR_EDR_NOT_SUPPORTED),
-            AdStructure::ServiceUuids16(&[[0x0f, 0x18]]),
-            AdStructure::CompleteLocalName(name.as_bytes()),
+            AdStructure::ServiceUuids128(&[HealthService::service_uuid_16()]),
         ],
         &mut advertiser_data[..],
     )?;
+
     let advertiser = peripheral
         .advertise(
             &AdvertisementParameters {
@@ -150,8 +154,8 @@ async fn advertise<'values, 'server, C: Controller>(
                 ..Default::default()
             },
             Advertisement::ConnectableScannableUndirected {
-                adv_data: &advertiser_data[..len],
-                scan_data: &[],
+                adv_data: &advertiser_data[..adv_len],
+                scan_data: &scan_data[..scan_len],
             },
         )
         .await?;
@@ -170,7 +174,7 @@ async fn custom_task<C: Controller, P: PacketPool>(
     conn: &GattConnection<'_, '_, P>,
     stack: &Stack<'_, C, P>,
 ) {
-    let status = server.battery_service.status;
+    let status = server.health_service.status;
     loop {
         info!("[custom_task] notifying connection of status");
         if status.notify(conn, &true).await.is_err() {

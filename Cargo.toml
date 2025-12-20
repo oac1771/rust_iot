@@ -1,11 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-    "bin/iot",
+    "bin/iot", 
+    "crates/services",
 ]
 
 [workspace.package]
-rust-version = "1.85"
+rust-version = "1.90"
 version = "0.1.0"
 edition = "2024"
 
@@ -33,6 +34,9 @@ trouble-host = { version = "0.5.0" }
 # for 'ble_bas_peripheral_bonding'
 embassy-embedded-hal = "0.5.0"
 esp-storage = { version = "0.8.1" }
+
+# Workspace
+services = { path = "crates/services" }
 
 [profile.dev]
 opt-level = "s"
