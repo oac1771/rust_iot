@@ -1,3 +1,4 @@
+use super::uuid_to_ble_bytes;
 use trouble_host::prelude::gatt_service;
 use uuid::Uuid;
 
@@ -12,17 +13,8 @@ pub struct HealthService {
 }
 
 impl HealthService {
-    pub fn service_uuid_16() -> [u8; 16] {
-        HEALTH_SERVICE_UUID.to_bytes_le().try_into().unwrap()
+    pub fn service_uuid_16() -> [u8; 2] {
+        let raw = HEALTH_SERVICE_UUID.to_bytes_le();
+        [raw[0], raw[1]]
     }
-}
-
-const fn uuid_to_ble_bytes(uuid: &Uuid) -> [u8; 16] {
-    let b = *uuid.as_bytes();
-    [
-        b[15], b[14], b[13], b[12],
-        b[11], b[10], b[9],  b[8],
-        b[7],  b[6],  b[5],  b[4],
-        b[3],  b[2],  b[1],  b[0],
-    ]
 }

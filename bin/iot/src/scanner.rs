@@ -2,7 +2,7 @@ use embassy_futures::join::join;
 use embassy_futures::select::select;
 use embassy_time::{Duration, Timer};
 use log::{warn, info};
-use services::health::HealthService;
+use services::{led::LedService, health::HealthService};
 use trouble_host::prelude::*;
 
 /// Max number of connections
@@ -15,6 +15,7 @@ const L2CAP_CHANNELS_MAX: usize = 2; // Signal + att
 #[gatt_server]
 struct Server {
     health_service: HealthService,
+    led_service: LedService
 }
 
 
@@ -141,7 +142,8 @@ async fn advertise<'values, 'server, C: Controller>(
     let adv_len = AdStructure::encode_slice(
         &[
             AdStructure::Flags(LE_GENERAL_DISCOVERABLE | BR_EDR_NOT_SUPPORTED),
-            AdStructure::ServiceUuids128(&[HealthService::service_uuid_16()]),
+            AdStructure::ServiceUuids16(&[HealthService::service_uuid_16()]),
+            AdStructure::ServiceUuids16(&[LedService::service_uuid_16()]),
         ],
         &mut advertiser_data[..],
     )?;
