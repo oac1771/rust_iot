@@ -1,13 +1,13 @@
 #![no_std]
 #![no_main]
 
-mod scanner;
+mod iot;
 
 use embassy_executor::Spawner;
 use esp_hal::clock::CpuClock;
 use esp_hal::timer::timg::TimerGroup;
 use esp_radio::ble::controller::BleConnector;
-use scanner::run;
+use iot::run;
 use trouble_host::prelude::ExternalController;
 use {esp_alloc as _, esp_backtrace as _};
 

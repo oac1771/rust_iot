@@ -5,7 +5,6 @@ use uuid::Uuid;
 const LED_SERVICE_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a20000);
 pub const LED_STATUS_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a20001);
 
-
 #[gatt_service(uuid = uuid_to_ble_bytes(&LED_SERVICE_UUID))]
 pub struct LedService {
     #[characteristic(uuid = uuid_to_ble_bytes(&LED_STATUS_CHAR_UUID), write)]
