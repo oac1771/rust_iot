@@ -22,7 +22,7 @@ esp-println = { workspace = true, features = ["log-04"] }
 esp-radio = { workspace = true, features = ["ble", "log-04", "unstable"] }
 esp-rtos = { workspace = true, features = ["embassy", "esp-alloc", "esp-radio", "log-04"] }
 heapless = { workspace = true }
-log = { workspace = true}
+log = { workspace = true }
 static_cell = { workspace = true }
 trouble-host = { workspace = true, features = ["default-packet-pool-mtu-255", "scan", "log", "gatt"] }
 
@@ -32,6 +32,7 @@ esp-storage = { workspace = true }
 
 # Workspace
 services = { workspace = true }
+util = { workspace = true }
 
 [features]
 default = ["esp32c3"]

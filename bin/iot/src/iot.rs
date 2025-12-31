@@ -1,8 +1,13 @@
-use embassy_futures::join::join;
+use embassy_futures::{join::join, select::select};
+use embassy_sync::{
+    blocking_mutex::raw::CriticalSectionRawMutex,
+    channel::{Channel, Receiver, Sender},
+};
 use embassy_time::Duration;
-use log::{error, info, trace, warn};
+use log::{error, info, warn};
 use services::{health::HealthService, led::LedService};
 use trouble_host::prelude::*;
+use util::WriteData;
 
 /// Max number of connections
 const CONNECTIONS_MAX: usize = 1;
@@ -17,29 +22,31 @@ struct Server {
 }
 
 impl Server<'_> {
-    async fn handle_event<'stack, 'server, P: PacketPool>(&self, event: &GattEvent<'stack, 'server, P>, conn: &GattConnection<'_, '_, P>) {
-        match event {
-            GattEvent::Read(event) => {
-                if event.handle() == self.health_service.status.handle {
-                    info!("health service read");
-                    custom_task(&self, conn).await;
-                }
-            },
-            GattEvent::Write(event) => { 
-                if event.handle() == self.led_service.val.handle {
-                    info!("led service write")
-
-                }
-            },
-            _ => {}
+    async fn handle_payload<'stack, 'server, P: PacketPool>(
+        &self,
+        conn: &GattConnection<'_, '_, P>,
+        payload_receiver: Receiver<'_, CriticalSectionRawMutex, Payload, 8>,
+    ) {
+        loop {
+            match payload_receiver.receive().await {
+                Payload::Read { handle } => {
+                    if handle == self.health_service.status_handle() {
+                        self.health_service.process(conn).await;
+                    } else {
+                        warn!("Read payload handle did not match known handle")
+                    }
+                },
+                Payload::Write { handle, write_data } => {
+                    if handle == self.led_service.val_handle() {
+                        self.led_service.process(write_data).await;
+                    } else {
+                        warn!("Write payload handle did not match known handle")
+                    }
+                },
+                Payload::Other => continue,
+            }
         }
-
     }
-
-    // // this should return array of uuids so you dont have to hard code them in advertise
-    // fn services_uuids() -> [Services; 2] {
-    //     [Services::Health, Services::Led]
-    // }
 }
 
 /// Run the BLE stack.
@@ -72,7 +79,14 @@ where
         loop {
             match advertise("Trouble Example", &mut peripheral, &server).await {
                 Ok(conn) => {
-                    handle_connection(&conn, &server).await
+                    let payload_channel: Channel<CriticalSectionRawMutex, Payload, 8> = Channel::new();
+                    let payload_sender = payload_channel.sender();
+                    let payload_receiver = payload_channel.receiver();
+
+                    let gatt_driver = drive_connection(&conn, payload_sender);
+                    let payload_driver = server.handle_payload(&conn, payload_receiver);
+
+                    select(gatt_driver, payload_driver).await;
                 }
                 Err(e) => {
                     error!("[adv] error: {:?}", e);
@@ -152,11 +166,10 @@ async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
 ///
 /// This function will handle the GATT events and process them.
 /// This is how we interact with read and write requests.
-async fn gatt_events_task<P: PacketPool>(
-    server: &Server<'_>,
+async fn drive_connection<P: PacketPool>(
     conn: &GattConnection<'_, '_, P>,
-) -> Result<(), Error> {
-    let status = server.health_service.status;
+    sender: Sender<'_, CriticalSectionRawMutex, Payload, 8>,
+) {
     loop {
         match conn.next().await {
             GattConnectionEvent::Disconnected { reason } => {
@@ -164,83 +177,19 @@ async fn gatt_events_task<P: PacketPool>(
                 break;
             }
             GattConnectionEvent::Gatt { event } => {
-                match &event {
-                    GattEvent::Read(event) => {
-                        if event.handle() == status.handle {
-                            let value = server.get(&status);
-                            info!("[gatt] Read Event to Level Characteristic: {:?}", value);
-                        }
-                    }
-                    GattEvent::Write(event) => {
-                        if event.handle() == status.handle {
-                            info!(
-                                "[gatt] Write Event to Level Characteristic: {:?}",
-                                event.data()
-                            );
-                        }
-                    }
-                    GattEvent::Other(_) => {
-                        info!("[gatt] Other event");
+                let payload = match Payload::try_from(&event) {
+                    Ok(payload) => payload,
+                    Err(err) => {
+                        error!("Unable to parse payload: {}", err);
+                        continue
                     }
                 };
-                // This step is also performed at drop(), but writing it explicitly is necessary
-                // in order to ensure reply is sent.
+                sender.send(payload).await;
+
                 match event.accept() {
                     Ok(reply) => {
                         info!("[gatt] reply sent!");
                         reply.send().await
-                    }
-                    Err(e) => warn!("[gatt] error sending response: {:?}", e),
-                };
-            }
-            _ => {} // ignore other Gatt Connection Events
-        }
-    }
-    Ok(())
-}
-
-/// Example task to use the BLE notifier interface.
-/// This task will notify the connected central of a counter value every 2 seconds.
-/// It will also read the RSSI value every 2 seconds.
-/// and will stop when the connection is closed by the central or an error occurs.
-async fn custom_task<P: PacketPool>(
-    server: &Server<'_>,
-    conn: &GattConnection<'_, '_, P>,
-    // stack: &Stack<'_, C, P>,
-) {
-    let status = server.health_service.status;
-    loop {
-        info!("[custom_task] notifying connection of status");
-        if status.notify(conn, &true).await.is_err() {
-            info!("[custom_task] error notifying connection");
-            break;
-        };
-        // read RSSI (Received Signal Strength Indicator) of the connection.
-        // if let Ok(rssi) = conn.raw().rssi(stack).await {
-        //     info!("[custom_task] RSSI: {:?}", rssi);
-        // } else {
-        //     info!("[custom_task] error getting RSSI");
-        //     break;
-        // };
-        embassy_time::Timer::after_secs(2).await;
-    }
-}
-
-async fn handle_connection<P: PacketPool>(conn: &GattConnection<'_, '_, P>, server: &Server<'_>) {
-    loop {
-        match conn.next().await {
-            GattConnectionEvent::Disconnected { reason } => {
-                info!("[gatt] disconnected: {:?}", reason);
-                break;
-            }
-            GattConnectionEvent::Gatt { event } => {
-                
-                server.handle_event(&event, &conn).await;
-
-                match event.accept() {
-                    Ok(reply) => {
-                        trace!("[gatt] reply sent!");
-                        reply.send().await;
                     }
                     Err(e) => error!("[gatt] error sending response: {:?}", e),
                 };
@@ -250,3 +199,25 @@ async fn handle_connection<P: PacketPool>(conn: &GattConnection<'_, '_, P>, serv
     }
 }
 
+enum Payload {
+    Read { handle: u16 },
+    Write { handle: u16, write_data: WriteData },
+    Other
+}
+
+impl<P: PacketPool> TryFrom<&GattEvent<'_, '_, P>> for Payload {
+    type Error = heapless::CapacityError;
+
+    fn try_from(value: &GattEvent<'_, '_, P>) -> Result<Self, Self::Error> {
+        match value {
+            GattEvent::Read(event) => Ok(Self::Read { handle: event.handle() }),
+            GattEvent::Write(event) => {
+                let handle = event.handle();
+                let mut write_data = WriteData::new();
+                write_data.extend_from_slice(event.data())?;
+                Ok(Self::Write { handle, write_data })
+            },
+            GattEvent::Other(_) => Ok(Self::Other)
+        }
+    }
+}

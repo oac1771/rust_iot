@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "bin/iot", 
     "crates/services",
+    "crates/util",
 ]
 
 [workspace.package]
@@ -37,6 +38,7 @@ esp-storage = { version = "0.8.1" }
 
 # Workspace
 services = { path = "crates/services" }
+util = { path = "crates/util" }
 
 [profile.dev]
 opt-level = "s"
