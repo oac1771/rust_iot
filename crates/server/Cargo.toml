@@ -1,0 +1,17 @@
+[package]
+name = "server"
+rust-version.workspace = true
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+embassy-futures = { workspace = true }
+embassy-time = { workspace = true }
+embassy-sync = { workspace = true }
+heapless = { workspace = true }
+log = { workspace = true }
+trouble-host = { workspace = true, features = ["default-packet-pool-mtu-255", "scan", "log", "gatt"] }
+
+# Workspace
+services = { workspace = true }
+util = { workspace = true }

@@ -31,8 +31,7 @@ embassy-embedded-hal = { workspace = true }
 esp-storage = { workspace = true }
 
 # Workspace
-services = { workspace = true }
-util = { workspace = true }
+server = { workspace = true }
 
 [features]
 default = ["esp32c3"]
