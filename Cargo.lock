@@ -1002,7 +1002,6 @@ dependencies = [
 name = "iot"
 version = "0.1.0"
 dependencies = [
- "bt-hci",
  "embassy-embedded-hal",
  "embassy-executor",
  "embassy-futures",

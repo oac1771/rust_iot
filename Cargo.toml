@@ -13,8 +13,6 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-bt-hci = { version = "0.6" }
-defmt = { version = "1.0.1" }
 embassy-executor = "0.9.1"
 embassy-sync = { version = "0.7" }
 embassy-futures = "0.1.1"

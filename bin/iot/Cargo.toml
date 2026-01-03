@@ -9,7 +9,6 @@ name = "iot"
 path = "src/main.rs"
 
 [dependencies]
-bt-hci = { workspace = true }
 embassy-executor = { workspace = true }
 embassy-sync = { workspace = true }
 embassy-futures = { workspace = true }
