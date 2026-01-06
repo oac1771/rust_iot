@@ -26,6 +26,17 @@ impl Server<'_> {
             appearance: &appearance::UNKNOWN,
         }))?;
 
+        info!("ping service handle: {}", server.health_service.ping.handle);
+        info!(
+            "ping ccd service handle: {}",
+            server.health_service.ping.cccd_handle.unwrap()
+        );
+        info!(
+            "status service handle: {}",
+            server.health_service.status.handle
+        );
+        info!("led service handle: {}", server.led_service.val.handle);
+
         Ok(server)
     }
 
@@ -62,7 +73,9 @@ impl Server<'_> {
             match payload_receiver.receive().await {
                 Payload::Read { handle } => {
                     if handle == self.health_service.status_handle() {
-                        self.health_service.process(conn).await;
+                        self.health_service.process_status(conn).await;
+                    } else if handle == self.health_service.ping_handle() {
+                        self.health_service.process_ping(conn).await;
                     } else {
                         warn!("Read payload handle did not match known handle")
                     }
@@ -70,6 +83,8 @@ impl Server<'_> {
                 Payload::Write { handle, write_data } => {
                     if handle == self.led_service.val_handle() {
                         self.led_service.process(write_data).await;
+                    } else if Some(handle) == self.health_service.ping_ccd_handle() {
+                        self.health_service.process_ping(conn).await;
                     } else {
                         warn!("Write payload handle did not match known handle")
                     }

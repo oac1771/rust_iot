@@ -12,4 +12,5 @@ log = { workspace = true }
 trouble-host = { workspace = true, features = ["default-packet-pool-mtu-255", "scan", "log", "gatt"] }
 uuid = { version = "1.19.0", default-features = false }
 
+# Workspace
 util = { workspace = true }

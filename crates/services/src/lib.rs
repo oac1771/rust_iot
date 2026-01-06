@@ -2,6 +2,8 @@
 pub mod health;
 pub mod led;
 
+pub use trouble_host;
+
 const fn uuid_to_ble_bytes(uuid: &uuid::Uuid) -> [u8; 16] {
     let b = *uuid.as_bytes();
     [

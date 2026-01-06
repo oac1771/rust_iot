@@ -1,3 +1,6 @@
 split up health services characteristics
     - ping pong (instead of status) (read)
     - stream ping pong (notify)
+
+example:
+https://github.com/embassy-rs/trouble/tree/main/examples/esp32
