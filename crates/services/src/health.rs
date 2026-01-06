@@ -3,7 +3,7 @@ use core::fmt::Display;
 use super::uuid_to_ble_bytes;
 use log::{error, info};
 use trouble_host::{
-    PacketPool,
+    Controller, PacketPool, Stack,
     gatt::GattConnection,
     prelude::{AsGatt, FromGatt, gatt_service},
     types::gatt_traits::FromGattError,
@@ -27,10 +27,6 @@ impl HealthService {
         self.status.handle
     }
 
-    pub fn ping_handle(&self) -> u16 {
-        self.ping.handle
-    }
-
     pub fn ping_ccd_handle(&self) -> Option<u16> {
         self.ping.cccd_handle
     }
@@ -42,10 +38,23 @@ impl HealthService {
 
     pub async fn process_status<P: PacketPool>(&self, _conn: &GattConnection<'_, '_, P>) {}
 
-    pub async fn process_ping<P: PacketPool>(&self, conn: &GattConnection<'_, '_, P>) {
+    pub async fn process_ping<P: PacketPool, C: Controller>(
+        &self,
+        conn: &GattConnection<'_, '_, P>,
+        stack: &Stack<'_, C, P>,
+    ) {
         info!("[health_service] starting ping notification...");
         loop {
-            if self.ping.notify(conn, &Pong).await.is_err() {
+            let rssi = if let Ok(rssi) = conn.raw().rssi(stack).await {
+                rssi
+            } else {
+                error!("[health_service] error getting RSSI");
+                break;
+            };
+
+            let pong = Pong::new(rssi);
+
+            if self.ping.notify(conn, &pong).await.is_err() {
                 error!("[health_service] error sending ping notification");
                 break;
             };
@@ -54,38 +63,35 @@ impl HealthService {
     }
 }
 
-pub struct Pong;
+#[derive(Default)]
+pub struct Pong {
+    rssi: i8,
+}
+
+impl Pong {
+    fn new(rssi: i8) -> Self {
+        Self { rssi }
+    }
+}
 
 impl AsGatt for Pong {
-    const MIN_SIZE: usize = 0;
-    const MAX_SIZE: usize = 0;
+    const MIN_SIZE: usize = core::mem::size_of::<i8>();
+    const MAX_SIZE: usize = core::mem::size_of::<i8>();
 
     fn as_gatt(&self) -> &[u8] {
-        &[]
+        self.rssi.as_gatt()
     }
 }
 
 impl FromGatt for Pong {
-    fn from_gatt(_data: &[u8]) -> Result<Self, FromGattError> {
-        Ok(Self)
-    }
-}
-
-impl Default for Pong {
-    fn default() -> Self {
-        Self
+    fn from_gatt(data: &[u8]) -> Result<Self, FromGattError> {
+        let rssi = i8::from_gatt(data)?;
+        Ok(Self { rssi })
     }
 }
 
 impl Display for Pong {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "Pong")
+        write!(f, "Pong (rssi: {})", self.rssi)
     }
 }
-// read RSSI (Received Signal Strength Indicator) of the connection.
-// if let Ok(rssi) = conn.raw().rssi(stack).await {
-//     info!("[custom_task] RSSI: {:?}", rssi);
-// } else {
-//     info!("[custom_task] error getting RSSI");
-//     break;
-// };

@@ -10,8 +10,8 @@ use services::{health::HealthService, led::LedService};
 use trouble_host::prelude::*;
 use util::WriteData;
 
-pub const SERVER_NAME: &'static str = "TrouBLE";
-pub const ADVERTISE_NAME: &'static str = "Trouble Example";
+pub const SERVER_NAME: &str = "TrouBLE";
+pub const ADVERTISE_NAME: &str = "Trouble Example";
 
 #[gatt_server]
 pub struct Server {
@@ -26,23 +26,13 @@ impl Server<'_> {
             appearance: &appearance::UNKNOWN,
         }))?;
 
-        info!("ping service handle: {}", server.health_service.ping.handle);
-        info!(
-            "ping ccd service handle: {}",
-            server.health_service.ping.cccd_handle.unwrap()
-        );
-        info!(
-            "status service handle: {}",
-            server.health_service.status.handle
-        );
-        info!("led service handle: {}", server.led_service.val.handle);
-
         Ok(server)
     }
 
     pub async fn start<'values, C: Controller>(
         self,
         peripheral: &mut Peripheral<'values, C, DefaultPacketPool>,
+        stack: &Stack<'_, C, DefaultPacketPool>,
     ) {
         loop {
             match self.advertise(peripheral).await {
@@ -53,7 +43,7 @@ impl Server<'_> {
                     let payload_receiver = payload_channel.receiver();
 
                     let gatt_driver = drive_connection(&conn, payload_sender);
-                    let payload_driver = self.handle_payload(&conn, payload_receiver);
+                    let payload_driver = self.handle_payload(&conn, payload_receiver, stack);
 
                     select(gatt_driver, payload_driver).await;
                 }
@@ -64,18 +54,17 @@ impl Server<'_> {
         }
     }
 
-    pub async fn handle_payload<'stack, 'server, P: PacketPool>(
+    pub async fn handle_payload<P: PacketPool, C: Controller>(
         &self,
         conn: &GattConnection<'_, '_, P>,
         payload_receiver: Receiver<'_, CriticalSectionRawMutex, Payload, 8>,
+        stack: &Stack<'_, C, P>,
     ) {
         loop {
             match payload_receiver.receive().await {
                 Payload::Read { handle } => {
                     if handle == self.health_service.status_handle() {
                         self.health_service.process_status(conn).await;
-                    } else if handle == self.health_service.ping_handle() {
-                        self.health_service.process_ping(conn).await;
                     } else {
                         warn!("Read payload handle did not match known handle")
                     }
@@ -84,7 +73,7 @@ impl Server<'_> {
                     if handle == self.led_service.val_handle() {
                         self.led_service.process(write_data).await;
                     } else if Some(handle) == self.health_service.ping_ccd_handle() {
-                        self.health_service.process_ping(conn).await;
+                        self.health_service.process_ping(conn, stack).await;
                     } else {
                         warn!("Write payload handle did not match known handle")
                     }
@@ -129,7 +118,7 @@ impl Server<'_> {
             )
             .await?;
         info!("[adv] advertising");
-        let conn = advertiser.accept().await?.with_attribute_server(&self)?;
+        let conn = advertiser.accept().await?.with_attribute_server(self)?;
         info!("[adv] connection established");
         Ok(conn)
     }

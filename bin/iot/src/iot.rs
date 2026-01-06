@@ -28,7 +28,7 @@ where
 
     info!("Starting advertising and GATT service");
     let server = Server::init().unwrap();
-    join(ble_task(runner), server.start(&mut peripheral)).await;
+    join(ble_task(runner), server.start(&mut peripheral, &stack)).await;
 }
 
 async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
