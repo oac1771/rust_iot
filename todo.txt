@@ -1,2 +1,5 @@
+fix clippy (maybe a write, read channel so you dont need enum)
+create hardware client to be able to flash led and shit maybe even read stack data
+
 example:
 https://github.com/embassy-rs/trouble/tree/main/examples/esp32
