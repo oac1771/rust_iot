@@ -18,6 +18,11 @@ install espflash
 cargo install espflash
 ```
 
+Flash device
+```
+cargo espflash flash --release --package iot --target riscv32imc-unknown-none-elf --monitor
+```
+
 ### Reference
 [embassy book](https://embassy.dev/book/index.html#_introduction)
 [rust on esp book](https://docs.esp-rs.org/book/introduction.html)

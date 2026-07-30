@@ -26,7 +26,7 @@ static_cell = { workspace = true }
 trouble-host = { workspace = true, features = ["default-packet-pool-mtu-255", "scan", "log", "gatt"] }
 
 # for 'ble_bas_peripheral_bonding'
-embassy-embedded-hal = { workspace = true }
+embedded-hal = { workspace = true }
 esp-storage = { workspace = true }
 
 # Workspace

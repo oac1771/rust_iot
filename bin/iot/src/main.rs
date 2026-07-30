@@ -29,9 +29,8 @@ async fn main(_s: Spawner) {
         software_interrupt.software_interrupt0,
     );
 
-    let radio = esp_radio::init().unwrap();
-    let bluetooth = peripherals.BT;
-    let connector = BleConnector::new(&radio, bluetooth, Default::default()).unwrap();
+    let connector =
+        BleConnector::new(peripherals.BT, Default::default()).expect("BLE controller init failed");
     let controller: ExternalController<_, 20> = ExternalController::new(connector);
 
     run(controller).await;

@@ -14,8 +14,7 @@ pub async fn run<C>(controller: C)
 where
     C: Controller,
 {
-    let address: Address = Address::random([0xff, 0x8f, 0x1a, 0x05, 0xe4, 0xff]);
-    info!("Our address = {:?}", address);
+    let address = Address::random([0xff, 0x8f, 0x1a, 0x05, 0xe4, 0xff]);
 
     let mut resources: HostResources<DefaultPacketPool, CONNECTIONS_MAX, L2CAP_CHANNELS_MAX> =
         HostResources::new();

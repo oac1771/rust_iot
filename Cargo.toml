@@ -13,27 +13,25 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-embassy-executor = "0.9.1"
-embassy-sync = { version = "0.7" }
-embassy-futures = "0.1.1"
-embassy-time = "0.5"
+embassy-executor = { version = "0.10.0" }
+embassy-sync = { version = "0.7.2" }
+embassy-futures = { version = "0.1.2" }
+embassy-time = { version = "0.5.0" }
 embedded-storage-async = { version = "0.4.1" }
-esp-bootloader-esp-idf = "0.4.0"
-esp-backtrace = { version = "0.18.1" }
-esp-hal = { version = "1.0.0" }
-esp-alloc = { version = "0.9.0" }
-esp-println = { version = "0.16.0" }
-esp-radio = { version = "0.17.0" }
-esp-rtos = { version = "0.2.0" }
+embedded-hal = { version = "1.0.0" }
+esp-bootloader-esp-idf = { version = "0.5.0" }
+esp-backtrace = { version = "0.19.0" }
+esp-hal = { version = "1.1.1" }
+esp-alloc = { version = "0.10.0" }
+esp-println = { version = "0.17.0" }
+esp-radio = { version = "0.18.0" }
+esp-rtos = { version = "0.3.0" }
+esp-storage = { version = "0.8.1" }
 heapless = "0.9"
 log = { version = "0.4" }
 sequential-storage = { version = "5.0.0" }
 static_cell = "2"
-trouble-host = { version = "0.5.0" }
-
-# for 'ble_bas_peripheral_bonding'
-embassy-embedded-hal = "0.5.0"
-esp-storage = { version = "0.8.1" }
+trouble-host = { version = "0.6.0" }
 
 # Workspace
 server = { path = "crates/server" }

@@ -1,6 +1,6 @@
 use super::uuid_to_ble_bytes;
 use log::info;
-use trouble_host::prelude::gatt_service;
+use trouble_host::prelude::{descriptors, gatt_service};
 use util::WriteData;
 use uuid::Uuid;
 
@@ -9,6 +9,8 @@ pub const LED_STATUS_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d4
 
 #[gatt_service(uuid = uuid_to_ble_bytes(&LED_SERVICE_UUID))]
 pub struct LedService {
+    #[descriptor(uuid = descriptors::VALID_RANGE, read, value = [0, 100])]
+    #[descriptor(uuid = descriptors::MEASUREMENT_DESCRIPTION, name = "hello", read, value = "Battery Level", type = &'static str)]
     #[characteristic(uuid = uuid_to_ble_bytes(&LED_STATUS_CHAR_UUID), write)]
     pub val: bool,
 }

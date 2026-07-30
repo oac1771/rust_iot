@@ -115,8 +115,7 @@ impl Server<'_> {
         let adv_len = AdStructure::encode_slice(
             &[
                 AdStructure::Flags(LE_GENERAL_DISCOVERABLE | BR_EDR_NOT_SUPPORTED),
-                AdStructure::ServiceUuids16(&[HealthService::service_uuid_16()]),
-                AdStructure::ServiceUuids16(&[LedService::service_uuid_16()]),
+                AdStructure::CompleteLocalName(b"TrouBLE"),
             ],
             &mut advertiser_data[..],
         )?;
@@ -160,7 +159,9 @@ async fn drive_connection<P: PacketPool>(
                     }
                     GattEvent::Write(e) => {
                         let mut write_data = WriteData::new();
-                        if let Err(err) = write_data.extend_from_slice(e.data()) {
+                        // let bar = e.payload();
+
+                        if let Err(err) = write_data.extend_from_slice(&[]) {
                             error!("Error copying write data: {}", err);
                         };
                         let write_payload = WritePayload {
@@ -170,6 +171,7 @@ async fn drive_connection<P: PacketPool>(
                         write_payload_sender.send(write_payload).await;
                     }
                     GattEvent::Other(_) => {}
+                    GattEvent::NotAllowed(_) => {}
                 }
 
                 match event.accept() {
