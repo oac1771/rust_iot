@@ -10,8 +10,11 @@ use esp_radio::ble::controller::BleConnector;
 use iot::run;
 use trouble_host::prelude::ExternalController;
 use {esp_alloc as _, esp_backtrace as _};
+use server::config::Config;
 
 esp_bootloader_esp_idf::esp_app_desc!();
+
+const UUID: Option<&str> = option_env!("UUID");
 
 #[esp_rtos::main]
 async fn main(_s: Spawner) {
@@ -33,5 +36,11 @@ async fn main(_s: Spawner) {
         BleConnector::new(peripherals.BT, Default::default()).expect("BLE controller init failed");
     let controller: ExternalController<_, 20> = ExternalController::new(connector);
 
-    run(controller).await;
+
+    let uuid = UUID.unwrap_or("UUID");
+    log::info!("UUID: {}", uuid);
+
+
+    let config = Config::new(uuid.as_bytes());
+    run(controller, config).await;
 }

@@ -1,4 +1,7 @@
 #![no_std]
+
+pub mod config;
+
 use embassy_futures::select::{Either, select};
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
@@ -6,17 +9,18 @@ use embassy_sync::{
 };
 use embassy_time::Duration;
 use log::{error, info, warn};
-use services::{health::HealthService, led::LedService};
+use services::{health::HealthService, storage::StorageService};
 use trouble_host::prelude::*;
 use util::WriteData;
 
-pub const SERVER_NAME: &str = "TrouBLE";
-pub const ADVERTISE_NAME: &str = "Trouble Example";
+use crate::config::Config;
+
+pub const SERVER_NAME: &str = "IOT_DEVICE";
 
 #[gatt_server]
 pub struct Server {
     health_service: HealthService,
-    led_service: LedService,
+    storage_service: StorageService,
 }
 
 impl Server<'_> {
@@ -33,9 +37,10 @@ impl Server<'_> {
         self,
         peripheral: &mut Peripheral<'values, C, DefaultPacketPool>,
         stack: &Stack<'_, C, DefaultPacketPool>,
+        config: Config<'_>
     ) {
         loop {
-            match self.advertise(peripheral).await {
+            match self.advertise(peripheral, &config).await {
                 Ok(conn) => {
                     let read_payload_channel: Channel<CriticalSectionRawMutex, ReadPayload, 8> =
                         Channel::new();
@@ -88,8 +93,8 @@ impl Server<'_> {
                     }
                 }
                 Either::Second(WritePayload { handle, write_data }) => {
-                    if handle == self.led_service.val_handle() {
-                        self.led_service.process(write_data).await;
+                    if handle == self.storage_service.val_handle() {
+                        self.storage_service.process(write_data).await;
                     } else if Some(handle) == self.health_service.ping_ccd_handle() {
                         self.health_service.process_ping(conn, stack).await;
                     } else {
@@ -103,19 +108,20 @@ impl Server<'_> {
     pub async fn advertise<'values, C: Controller>(
         &self,
         peripheral: &mut Peripheral<'values, C, DefaultPacketPool>,
+        config: &Config<'_>
     ) -> Result<GattConnection<'values, '_, DefaultPacketPool>, BleHostError<C::Error>> {
         let mut advertiser_data = [0; 31];
         let mut scan_data = [0; 31];
 
         let scan_len = AdStructure::encode_slice(
-            &[AdStructure::CompleteLocalName(ADVERTISE_NAME.as_bytes())],
+            &[AdStructure::CompleteLocalName(config.uuid())],
             &mut scan_data,
         )?;
 
         let adv_len = AdStructure::encode_slice(
             &[
                 AdStructure::Flags(LE_GENERAL_DISCOVERABLE | BR_EDR_NOT_SUPPORTED),
-                AdStructure::CompleteLocalName(b"TrouBLE"),
+                AdStructure::CompleteLocalName(config.uuid()),
             ],
             &mut advertiser_data[..],
         )?;

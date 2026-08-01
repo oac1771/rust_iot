@@ -1,16 +1,12 @@
 use embassy_futures::join::join;
 use log::info;
-use server::Server;
+use server::{config::Config, Server};
 use trouble_host::prelude::*;
 
-/// Max number of connections
 const CONNECTIONS_MAX: usize = 1;
+const L2CAP_CHANNELS_MAX: usize = 2;
 
-/// Max number of L2CAP channels.
-const L2CAP_CHANNELS_MAX: usize = 2; // Signal + att
-
-/// Run the BLE stack.
-pub async fn run<C>(controller: C)
+pub async fn run<C>(controller: C, config: Config<'_>)
 where
     C: Controller,
 {
@@ -27,7 +23,7 @@ where
 
     info!("Starting advertising and GATT service");
     let server = Server::init().unwrap();
-    join(ble_task(runner), server.start(&mut peripheral, &stack)).await;
+    join(ble_task(runner), server.start(&mut peripheral, &stack, config)).await;
 }
 
 async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {
