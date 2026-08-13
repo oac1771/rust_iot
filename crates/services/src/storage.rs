@@ -9,7 +9,7 @@ pub const STORAGE_STATUS_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3
 
 #[gatt_service(uuid = uuid_to_ble_bytes(&STORAGE_SERVICE_UUID))]
 pub struct StorageService {
-    #[descriptor(uuid = descriptors::MEASUREMENT_DESCRIPTION, name = "hello", read, value = "Battery Level", type = &'static str)]
+    #[descriptor(uuid = descriptors::MEASUREMENT_DESCRIPTION, name = "hello", read, value = 200, type = u8)]
     #[characteristic(uuid = uuid_to_ble_bytes(&STORAGE_STATUS_CHAR_UUID), write)]
     pub val: bool,
 }

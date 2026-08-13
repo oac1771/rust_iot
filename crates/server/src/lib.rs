@@ -134,7 +134,7 @@ async fn drive_connection<P: PacketPool>(
                     GattEvent::Write(e) => {
                         let mut write_data = WriteData::new();
 
-                        if let Err(err) = write_data.extend_from_slice(&[]) {
+                        if let Err(err) = write_data.extend_from_slice(e.data()) {
                             error!("Error copying write data: {}", err);
                         };
                         let write_payload = WritePayload {
