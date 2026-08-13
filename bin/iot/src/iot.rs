@@ -1,6 +1,6 @@
 use embassy_futures::join::join;
 use log::info;
-use server::{config::Config, Server};
+use server::{Server, config::Config};
 use trouble_host::prelude::*;
 
 const CONNECTIONS_MAX: usize = 1;
@@ -23,7 +23,11 @@ where
 
     info!("Starting advertising and GATT service");
     let server = Server::init().unwrap();
-    join(ble_task(runner), server.start(&mut peripheral, &stack, config)).await;
+    join(
+        ble_task(runner),
+        server.start(&mut peripheral, &stack, config),
+    )
+    .await;
 }
 
 async fn ble_task<C: Controller, P: PacketPool>(mut runner: Runner<'_, C, P>) {

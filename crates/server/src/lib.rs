@@ -2,7 +2,7 @@
 
 pub mod config;
 
-use embassy_futures::select::{Either, select};
+use embassy_futures::select::select;
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
     channel::{Channel, Receiver, Sender},
@@ -37,30 +37,19 @@ impl Server<'_> {
         self,
         peripheral: &mut Peripheral<'values, C, DefaultPacketPool>,
         stack: &Stack<'_, C, DefaultPacketPool>,
-        config: Config<'_>
+        config: Config<'_>,
     ) {
         loop {
             match self.advertise(peripheral, &config).await {
                 Ok(conn) => {
-                    let read_payload_channel: Channel<CriticalSectionRawMutex, ReadPayload, 8> =
-                        Channel::new();
                     let write_payload_channel: Channel<CriticalSectionRawMutex, WritePayload, 8> =
                         Channel::new();
-
-                    let read_payload_sender = read_payload_channel.sender();
-                    let read_payload_receiver = read_payload_channel.receiver();
 
                     let write_payload_sender = write_payload_channel.sender();
                     let write_payload_receiver = write_payload_channel.receiver();
 
-                    let gatt_driver =
-                        drive_connection(&conn, &read_payload_sender, &write_payload_sender);
-                    let payload_driver = self.handle_payload(
-                        &conn,
-                        &read_payload_receiver,
-                        &write_payload_receiver,
-                        stack,
-                    );
+                    let gatt_driver = drive_connection(&conn, &write_payload_sender);
+                    let payload_driver = self.handle_payload(&conn, &write_payload_receiver, stack);
 
                     select(gatt_driver, payload_driver).await;
                 }
@@ -74,33 +63,17 @@ impl Server<'_> {
     pub async fn handle_payload<P: PacketPool, C: Controller>(
         &self,
         conn: &GattConnection<'_, '_, P>,
-        read_payload_receiver: &Receiver<'_, CriticalSectionRawMutex, ReadPayload, 8>,
         write_payload_receiver: &Receiver<'_, CriticalSectionRawMutex, WritePayload, 8>,
         stack: &Stack<'_, C, P>,
     ) {
         loop {
-            match select(
-                read_payload_receiver.receive(),
-                write_payload_receiver.receive(),
-            )
-            .await
-            {
-                Either::First(ReadPayload { handle }) => {
-                    if handle == self.health_service.status_handle() {
-                        self.health_service.process_status(conn).await;
-                    } else {
-                        warn!("Read payload handle did not match known handle")
-                    }
-                }
-                Either::Second(WritePayload { handle, write_data }) => {
-                    if handle == self.storage_service.val_handle() {
-                        self.storage_service.process(write_data).await;
-                    } else if Some(handle) == self.health_service.ping_ccd_handle() {
-                        self.health_service.process_ping(conn, stack).await;
-                    } else {
-                        warn!("Write payload handle did not match known handle")
-                    }
-                }
+            let WritePayload { handle, write_data } = write_payload_receiver.receive().await;
+            if handle == self.storage_service.val_handle() {
+                self.storage_service.process(write_data).await;
+            } else if Some(handle) == self.health_service.ping_ccd_handle() {
+                self.health_service.process_ping(conn, stack).await;
+            } else {
+                warn!("Write payload handle did not match known handle")
             }
         }
     }
@@ -108,7 +81,7 @@ impl Server<'_> {
     pub async fn advertise<'values, C: Controller>(
         &self,
         peripheral: &mut Peripheral<'values, C, DefaultPacketPool>,
-        config: &Config<'_>
+        config: &Config<'_>,
     ) -> Result<GattConnection<'values, '_, DefaultPacketPool>, BleHostError<C::Error>> {
         let mut advertiser_data = [0; 31];
         let mut scan_data = [0; 31];
@@ -148,7 +121,6 @@ impl Server<'_> {
 
 async fn drive_connection<P: PacketPool>(
     conn: &GattConnection<'_, '_, P>,
-    read_payload_sender: &Sender<'_, CriticalSectionRawMutex, ReadPayload, 8>,
     write_payload_sender: &Sender<'_, CriticalSectionRawMutex, WritePayload, 8>,
 ) {
     loop {
@@ -159,13 +131,8 @@ async fn drive_connection<P: PacketPool>(
             }
             GattConnectionEvent::Gatt { event } => {
                 match &event {
-                    GattEvent::Read(e) => {
-                        let read_payload = ReadPayload { handle: e.handle() };
-                        read_payload_sender.send(read_payload).await;
-                    }
                     GattEvent::Write(e) => {
                         let mut write_data = WriteData::new();
-                        // let bar = e.payload();
 
                         if let Err(err) = write_data.extend_from_slice(&[]) {
                             error!("Error copying write data: {}", err);
@@ -178,6 +145,7 @@ async fn drive_connection<P: PacketPool>(
                     }
                     GattEvent::Other(_) => {}
                     GattEvent::NotAllowed(_) => {}
+                    _ => {}
                 }
 
                 match event.accept() {
@@ -193,9 +161,6 @@ async fn drive_connection<P: PacketPool>(
     }
 }
 
-pub struct ReadPayload {
-    handle: u16,
-}
 pub struct WritePayload {
     handle: u16,
     write_data: WriteData,

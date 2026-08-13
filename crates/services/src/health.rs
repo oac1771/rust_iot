@@ -5,7 +5,7 @@ use log::{error, info};
 use trouble_host::{
     Controller, PacketPool, Stack,
     gatt::GattConnection,
-    prelude::{AsGatt, FromGatt, gatt_service},
+    prelude::{AsGatt, FromGatt, descriptors, gatt_service},
     types::gatt_traits::FromGattError,
 };
 use uuid::Uuid;
@@ -18,6 +18,7 @@ pub const HEALTH_PING_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d
 pub struct HealthService {
     #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_CHAR_UUID), read, value=true)]
     pub status: bool,
+    #[descriptor(uuid = descriptors::MEASUREMENT_DESCRIPTION, name = "hello", read, value = "Ping Pong", type = &'static str)]
     #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_PING_CHAR_UUID), notify)]
     pub ping: Pong,
 }
@@ -35,8 +36,6 @@ impl HealthService {
         let raw = HEALTH_SERVICE_UUID.to_bytes_le();
         [raw[0], raw[1]]
     }
-
-    pub async fn process_status<P: PacketPool>(&self, _conn: &GattConnection<'_, '_, P>) {}
 
     pub async fn process_ping<P: PacketPool, C: Controller>(
         &self,
