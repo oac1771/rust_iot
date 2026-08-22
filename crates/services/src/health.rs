@@ -15,6 +15,7 @@ use uuid::Uuid;
 const HEALTH_SERVICE_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a10000);
 pub const HEALTH_STATUS_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a10001);
 pub const HEALTH_PING_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a10002);
+
 pub const HEALTH_STATUS_DESCRIPTOR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a11001);
 pub const HEALTH_PING_DESCRIPTOR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a11002);
 
@@ -29,7 +30,6 @@ pub struct HealthService {
 }
 
 impl HealthService {
-
     pub fn ping_ccd_handle(&self) -> Option<u16> {
         self.ping.cccd_handle
     }
@@ -116,6 +116,10 @@ impl Foo for HealthServicePingDescriptor {
     fn deserialize_response(&self, data: &[u8]) -> Result<Self::Inner, FromGattError> {
         <Self::Inner as FromGatt>::from_gatt(data)
     }
+
+    fn validate_write_data(&self, _data: &[u8]) -> bool {
+        true
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -141,5 +145,9 @@ impl Foo for HealthServiceStatusDescriptor {
 
     fn deserialize_response(&self, data: &[u8]) -> Result<Self::Inner, FromGattError> {
         <Self::Inner as FromGatt>::from_gatt(data)
+    }
+
+    fn validate_write_data(&self, _data: &[u8]) -> bool {
+        true
     }
 }

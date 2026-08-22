@@ -1,3 +1,5 @@
+use crate::Foo;
+
 use super::uuid_to_ble_bytes;
 use log::info;
 use trouble_host::{
@@ -27,6 +29,7 @@ impl StorageService {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct StorageServiceDataDescriptor;
 
 impl AsGatt for StorageServiceDataDescriptor {
@@ -41,5 +44,17 @@ impl AsGatt for StorageServiceDataDescriptor {
 impl FromGatt for StorageServiceDataDescriptor {
     fn from_gatt(_data: &[u8]) -> Result<Self, FromGattError> {
         Ok(Self)
+    }
+}
+
+impl Foo for StorageServiceDataDescriptor {
+    type Inner = u8;
+
+    fn deserialize_response(&self, data: &[u8]) -> Result<Self::Inner, FromGattError> {
+        <Self::Inner as FromGatt>::from_gatt(data)
+    }
+
+    fn validate_write_data(&self, data: &[u8]) -> bool {
+        u8::from_gatt(data).is_ok()
     }
 }

@@ -136,12 +136,13 @@ async fn drive_connection<P: PacketPool>(
 
                         if let Err(err) = write_data.extend_from_slice(e.data()) {
                             error!("Error copying write data: {}", err);
-                        };
-                        let write_payload = WritePayload {
-                            handle: e.handle(),
-                            write_data,
-                        };
-                        write_payload_sender.send(write_payload).await;
+                        } else {
+                            let write_payload = WritePayload {
+                                handle: e.handle(),
+                                write_data,
+                            };
+                            write_payload_sender.send(write_payload).await;
+                        }
                     }
                     GattEvent::Other(_) => {}
                     GattEvent::NotAllowed(_) => {}
