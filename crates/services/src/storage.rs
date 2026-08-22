@@ -3,19 +3,22 @@ use crate::Foo;
 use super::uuid_to_ble_bytes;
 use log::info;
 use trouble_host::{
-    prelude::{descriptors, gatt_service},
+    prelude::gatt_service,
     types::gatt_traits::{AsGatt, FromGatt, FromGattError},
 };
 use util::WriteData;
 use uuid::Uuid;
 
 const STORAGE_SERVICE_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a20000);
-pub const STORAGE_STATUS_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a20001);
+
+pub const STORAGE_DATA_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a20001);
+
+pub const STORAGE_DATA_DESCRIPTOR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a21001);
 
 #[gatt_service(uuid = uuid_to_ble_bytes(&STORAGE_SERVICE_UUID))]
 pub struct StorageService {
-    #[descriptor(uuid = descriptors::MEASUREMENT_DESCRIPTION, read, write, value = StorageServiceDataDescriptor, type = StorageServiceDataDescriptor)]
-    #[characteristic(uuid = uuid_to_ble_bytes(&STORAGE_STATUS_CHAR_UUID), read, write)]
+    #[descriptor(uuid = uuid_to_ble_bytes(&STORAGE_DATA_DESCRIPTOR_UUID), read, write, value = StorageServiceDataDescriptor, type = StorageServiceDataDescriptor)]
+    #[characteristic(uuid = uuid_to_ble_bytes(&STORAGE_DATA_CHAR_UUID), read, write)]
     pub data: u8,
 }
 
