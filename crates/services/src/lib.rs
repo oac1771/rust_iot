@@ -17,7 +17,9 @@ const fn uuid_to_ble_bytes(uuid: &uuid::Uuid) -> [u8; 16] {
 
 pub trait Foo {
     type Inner: FromGatt + Display;
+    type Id;
 
     fn deserialize_response(&self, data: &[u8]) -> Result<Self::Inner, FromGattError>;
     fn validate_write_data(&self, data: &[u8]) -> bool;
+    fn id(&self) -> Self::Id;
 }

@@ -25,7 +25,7 @@ pub struct HealthService {
     #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_DESCRIPTOR_UUID), read, value = HealthServiceStatusDescriptor, type = HealthServiceStatusDescriptor)]
     #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_CHAR_UUID), read, value=true)]
     pub status: bool,
-    #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_PING_DESCRIPTOR_UUID), write, value = HealthServicePingDescriptor, type = HealthServicePingDescriptor)]
+    #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_PING_DESCRIPTOR_UUID), read, value = HealthServicePingDescriptor, type = HealthServicePingDescriptor)]
     #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_PING_CHAR_UUID), notify)]
     pub ping: Pong,
 }
@@ -113,6 +113,7 @@ impl FromGatt for HealthServicePingDescriptor {
 
 impl Foo for HealthServicePingDescriptor {
     type Inner = Pong;
+    type Id = Uuid;
 
     fn deserialize_response(&self, data: &[u8]) -> Result<Self::Inner, FromGattError> {
         <Self::Inner as FromGatt>::from_gatt(data)
@@ -120,6 +121,10 @@ impl Foo for HealthServicePingDescriptor {
 
     fn validate_write_data(&self, _data: &[u8]) -> bool {
         true
+    }
+
+    fn id(&self) -> Self::Id {
+        HEALTH_PING_DESCRIPTOR_UUID
     }
 }
 
@@ -143,6 +148,7 @@ impl FromGatt for HealthServiceStatusDescriptor {
 
 impl Foo for HealthServiceStatusDescriptor {
     type Inner = bool;
+    type Id = Uuid;
 
     fn deserialize_response(&self, data: &[u8]) -> Result<Self::Inner, FromGattError> {
         <Self::Inner as FromGatt>::from_gatt(data)
@@ -150,5 +156,9 @@ impl Foo for HealthServiceStatusDescriptor {
 
     fn validate_write_data(&self, _data: &[u8]) -> bool {
         true
+    }
+
+    fn id(&self) -> Self::Id {
+        HEALTH_STATUS_DESCRIPTOR_UUID
     }
 }
