@@ -18,7 +18,7 @@ pub const STORAGE_DATA_DESCRIPTOR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2
 #[gatt_service(uuid = uuid_to_ble_bytes(&STORAGE_SERVICE_UUID))]
 pub struct StorageService {
     #[descriptor(uuid = uuid_to_ble_bytes(&STORAGE_DATA_DESCRIPTOR_UUID), read, value = StorageServiceDataDescriptor, type = StorageServiceDataDescriptor)]
-    #[characteristic(uuid = uuid_to_ble_bytes(&STORAGE_DATA_CHAR_UUID), read, write)]
+    #[characteristic(uuid = uuid_to_ble_bytes(&STORAGE_DATA_CHAR_UUID), read, write, value=42)]
     pub data: u8,
 }
 
@@ -51,15 +51,17 @@ impl FromGatt for StorageServiceDataDescriptor {
 }
 
 impl Foo for StorageServiceDataDescriptor {
-    type Inner = u8;
+    type ReadData = u8;
     type Id = Uuid;
+    type WriteData = [u8; 1];
 
-    fn deserialize_response(&self, data: &[u8]) -> Result<Self::Inner, FromGattError> {
-        <Self::Inner as FromGatt>::from_gatt(data)
+    fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError> {
+        <Self::ReadData as FromGatt>::from_gatt(data)
     }
 
-    fn validate_write_data(&self, data: &[u8]) -> bool {
-        u8::from_gatt(data).is_ok()
+    fn serialize_write_data(&self, data: Self::WriteData) -> impl AsGatt {
+        let value = u8::from_le_bytes(data);
+        value
     }
 
     fn id(&self) -> Self::Id {

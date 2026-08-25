@@ -112,14 +112,15 @@ impl FromGatt for HealthServicePingDescriptor {
 }
 
 impl Foo for HealthServicePingDescriptor {
-    type Inner = Pong;
+    type ReadData = Pong;
     type Id = Uuid;
+    type WriteData = ();
 
-    fn deserialize_response(&self, data: &[u8]) -> Result<Self::Inner, FromGattError> {
-        <Self::Inner as FromGatt>::from_gatt(data)
+    fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError> {
+        <Self::ReadData as FromGatt>::from_gatt(data)
     }
 
-    fn validate_write_data(&self, _data: &[u8]) -> bool {
+    fn serialize_write_data(&self, _data: Self::WriteData) -> impl AsGatt {
         true
     }
 
@@ -147,14 +148,15 @@ impl FromGatt for HealthServiceStatusDescriptor {
 }
 
 impl Foo for HealthServiceStatusDescriptor {
-    type Inner = bool;
+    type ReadData = bool;
     type Id = Uuid;
+    type WriteData = ();
 
-    fn deserialize_response(&self, data: &[u8]) -> Result<Self::Inner, FromGattError> {
-        <Self::Inner as FromGatt>::from_gatt(data)
+    fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError> {
+        <Self::ReadData as FromGatt>::from_gatt(data)
     }
 
-    fn validate_write_data(&self, _data: &[u8]) -> bool {
+    fn serialize_write_data(&self, _data: Self::WriteData) -> impl AsGatt {
         true
     }
 
