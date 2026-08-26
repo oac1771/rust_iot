@@ -69,7 +69,7 @@ impl Server<'_> {
         loop {
             let WritePayload { handle, write_data } = write_payload_receiver.receive().await;
             if handle == self.storage_service.data_handle() {
-                self.storage_service.process(write_data).await;
+                self.storage_service.process_write_data_request(write_data).await;
             } else if Some(handle) == self.health_service.ping_ccd_handle() {
                 self.health_service.process_ping(conn, stack).await;
             } else {

@@ -27,8 +27,8 @@ impl StorageService {
         self.data.handle
     }
 
-    pub async fn process(&self, _write_data: WriteData) {
-        info!("[led_service] notifying connection of status");
+    pub async fn process_write_data_request(&self, _write_data: WriteData) {
+        info!("[storage_service] handling writing data");
     }
 }
 

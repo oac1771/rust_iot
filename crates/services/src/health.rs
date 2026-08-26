@@ -23,8 +23,8 @@ pub const HEALTH_PING_DESCRIPTOR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c
 #[gatt_service(uuid = uuid_to_ble_bytes(&HEALTH_SERVICE_UUID))]
 pub struct HealthService {
     #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_DESCRIPTOR_UUID), read, value = HealthServiceStatusDescriptor, type = HealthServiceStatusDescriptor)]
-    #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_CHAR_UUID), read, value=true)]
-    pub status: bool,
+    #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_CHAR_UUID), read, value=Status { up: true })]
+    pub status: Status,
     #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_PING_DESCRIPTOR_UUID), read, value = HealthServicePingDescriptor, type = HealthServicePingDescriptor)]
     #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_PING_CHAR_UUID), notify)]
     pub ping: Pong,
@@ -57,6 +57,33 @@ impl HealthService {
             };
             embassy_time::Timer::after_secs(1).await;
         }
+    }
+}
+
+#[derive(Default)]
+pub struct Status {
+    up: bool,
+}
+
+impl AsGatt for Status {
+    const MIN_SIZE: usize = core::mem::size_of::<bool>();
+    const MAX_SIZE: usize = core::mem::size_of::<bool>();
+
+    fn as_gatt(&self) -> &[u8] {
+        self.up.as_gatt()
+    }
+}
+
+impl FromGatt for Status {
+    fn from_gatt(data: &[u8]) -> Result<Self, FromGattError> {
+        let up = bool::from_gatt(data)?;
+        Ok(Self { up })
+    }
+}
+
+impl Display for Status {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "up: {}", self.up)
     }
 }
 
@@ -148,7 +175,7 @@ impl FromGatt for HealthServiceStatusDescriptor {
 }
 
 impl Foo for HealthServiceStatusDescriptor {
-    type ReadData = bool;
+    type ReadData = Status;
     type Id = Uuid;
     type WriteData = ();
 
