@@ -142,9 +142,14 @@ impl Foo for HealthServicePingDescriptor {
     type ReadData = Pong;
     type Id = Uuid;
     type WriteData = ();
+    type NotificationData = Pong;
 
     fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError> {
         <Self::ReadData as FromGatt>::from_gatt(data)
+    }
+
+    fn deserialize_notification_response(&self, data: &[u8]) -> Result<Self::NotificationData, FromGattError> {
+        <Self::NotificationData as FromGatt>::from_gatt(data)
     }
 
     fn serialize_write_data(&self, _data: Self::WriteData) -> impl AsGatt {
@@ -178,9 +183,14 @@ impl Foo for HealthServiceStatusDescriptor {
     type ReadData = Status;
     type Id = Uuid;
     type WriteData = ();
+    type NotificationData = bool;
 
     fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError> {
         <Self::ReadData as FromGatt>::from_gatt(data)
+    }
+
+    fn deserialize_notification_response(&self, _data: &[u8]) -> Result<Self::NotificationData, FromGattError> {
+        Ok(false)
     }
 
     fn serialize_write_data(&self, _data: Self::WriteData) -> impl AsGatt {

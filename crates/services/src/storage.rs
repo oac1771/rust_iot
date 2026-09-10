@@ -54,9 +54,14 @@ impl Foo for StorageServiceDataDescriptor {
     type ReadData = u8;
     type Id = Uuid;
     type WriteData = [u8; 1];
+    type NotificationData = bool;
 
     fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError> {
         <Self::ReadData as FromGatt>::from_gatt(data)
+    }
+
+    fn deserialize_notification_response(&self, _data: &[u8]) -> Result<Self::NotificationData, FromGattError> {
+        Ok(false)
     }
 
     fn serialize_write_data(&self, data: Self::WriteData) -> impl AsGatt {
