@@ -15,14 +15,17 @@ const fn uuid_to_ble_bytes(uuid: &uuid::Uuid) -> [u8; 16] {
     ]
 }
 
-pub trait Foo {
+pub trait IotCharacteristic {
     type ReadData: FromGatt + Display;
     type NotificationData: FromGatt + Display;
     type Id;
     type WriteData;
 
     fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError>;
-    fn deserialize_notification_response(&self, data: &[u8]) -> Result<Self::NotificationData, FromGattError>;
+    fn deserialize_notification_response(
+        &self,
+        data: &[u8],
+    ) -> Result<Self::NotificationData, FromGattError>;
     fn serialize_write_data(&self, data: Self::WriteData) -> impl AsGatt;
     fn id(&self) -> Self::Id;
 }

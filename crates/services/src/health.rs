@@ -1,6 +1,6 @@
 use core::fmt::Display;
 
-use crate::Foo;
+use crate::IotCharacteristic;
 
 use super::uuid_to_ble_bytes;
 use log::{error, info};
@@ -22,10 +22,10 @@ pub const HEALTH_PING_DESCRIPTOR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c
 
 #[gatt_service(uuid = uuid_to_ble_bytes(&HEALTH_SERVICE_UUID))]
 pub struct HealthService {
-    #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_DESCRIPTOR_UUID), read, value = HealthServiceStatusDescriptor, type = HealthServiceStatusDescriptor)]
+    #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_DESCRIPTOR_UUID), read, value = true, type = bool)]
     #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_CHAR_UUID), read, value=Status { up: true })]
     pub status: Status,
-    #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_PING_DESCRIPTOR_UUID), read, value = HealthServicePingDescriptor, type = HealthServicePingDescriptor)]
+    #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_PING_DESCRIPTOR_UUID), read, value = true, type = bool)]
     #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_PING_CHAR_UUID), notify)]
     pub ping: Pong,
 }
@@ -123,22 +123,7 @@ impl Display for Pong {
 #[derive(Debug, Clone)]
 pub struct HealthServicePingDescriptor;
 
-impl AsGatt for HealthServicePingDescriptor {
-    const MIN_SIZE: usize = core::mem::size_of::<u8>();
-    const MAX_SIZE: usize = core::mem::size_of::<u8>();
-
-    fn as_gatt(&self) -> &[u8] {
-        &[]
-    }
-}
-
-impl FromGatt for HealthServicePingDescriptor {
-    fn from_gatt(_data: &[u8]) -> Result<Self, FromGattError> {
-        Ok(Self)
-    }
-}
-
-impl Foo for HealthServicePingDescriptor {
+impl IotCharacteristic for HealthServicePingDescriptor {
     type ReadData = Pong;
     type Id = Uuid;
     type WriteData = ();
@@ -148,7 +133,10 @@ impl Foo for HealthServicePingDescriptor {
         <Self::ReadData as FromGatt>::from_gatt(data)
     }
 
-    fn deserialize_notification_response(&self, data: &[u8]) -> Result<Self::NotificationData, FromGattError> {
+    fn deserialize_notification_response(
+        &self,
+        data: &[u8],
+    ) -> Result<Self::NotificationData, FromGattError> {
         <Self::NotificationData as FromGatt>::from_gatt(data)
     }
 
@@ -164,22 +152,8 @@ impl Foo for HealthServicePingDescriptor {
 #[derive(Debug, Clone)]
 pub struct HealthServiceStatusDescriptor;
 
-impl AsGatt for HealthServiceStatusDescriptor {
-    const MIN_SIZE: usize = core::mem::size_of::<u8>();
-    const MAX_SIZE: usize = core::mem::size_of::<u8>();
 
-    fn as_gatt(&self) -> &[u8] {
-        &[]
-    }
-}
-
-impl FromGatt for HealthServiceStatusDescriptor {
-    fn from_gatt(_data: &[u8]) -> Result<Self, FromGattError> {
-        Ok(Self)
-    }
-}
-
-impl Foo for HealthServiceStatusDescriptor {
+impl IotCharacteristic for HealthServiceStatusDescriptor {
     type ReadData = Status;
     type Id = Uuid;
     type WriteData = ();
@@ -189,7 +163,10 @@ impl Foo for HealthServiceStatusDescriptor {
         <Self::ReadData as FromGatt>::from_gatt(data)
     }
 
-    fn deserialize_notification_response(&self, _data: &[u8]) -> Result<Self::NotificationData, FromGattError> {
+    fn deserialize_notification_response(
+        &self,
+        _data: &[u8],
+    ) -> Result<Self::NotificationData, FromGattError> {
         Ok(false)
     }
 

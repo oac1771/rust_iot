@@ -1,4 +1,4 @@
-use crate::Foo;
+use crate::IotCharacteristic;
 
 use super::uuid_to_ble_bytes;
 use log::info;
@@ -17,7 +17,7 @@ pub const STORAGE_DATA_DESCRIPTOR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2
 
 #[gatt_service(uuid = uuid_to_ble_bytes(&STORAGE_SERVICE_UUID))]
 pub struct StorageService {
-    #[descriptor(uuid = uuid_to_ble_bytes(&STORAGE_DATA_DESCRIPTOR_UUID), read, value = StorageServiceDataDescriptor, type = StorageServiceDataDescriptor)]
+    #[descriptor(uuid = uuid_to_ble_bytes(&STORAGE_DATA_DESCRIPTOR_UUID), read, value = true, type = bool)]
     #[characteristic(uuid = uuid_to_ble_bytes(&STORAGE_DATA_CHAR_UUID), read, write, value=42)]
     pub data: u8,
 }
@@ -35,22 +35,7 @@ impl StorageService {
 #[derive(Debug, Clone)]
 pub struct StorageServiceDataDescriptor;
 
-impl AsGatt for StorageServiceDataDescriptor {
-    const MIN_SIZE: usize = core::mem::size_of::<u8>();
-    const MAX_SIZE: usize = core::mem::size_of::<u8>();
-
-    fn as_gatt(&self) -> &[u8] {
-        &[]
-    }
-}
-
-impl FromGatt for StorageServiceDataDescriptor {
-    fn from_gatt(_data: &[u8]) -> Result<Self, FromGattError> {
-        Ok(Self)
-    }
-}
-
-impl Foo for StorageServiceDataDescriptor {
+impl IotCharacteristic for StorageServiceDataDescriptor {
     type ReadData = u8;
     type Id = Uuid;
     type WriteData = [u8; 1];
@@ -60,7 +45,10 @@ impl Foo for StorageServiceDataDescriptor {
         <Self::ReadData as FromGatt>::from_gatt(data)
     }
 
-    fn deserialize_notification_response(&self, _data: &[u8]) -> Result<Self::NotificationData, FromGattError> {
+    fn deserialize_notification_response(
+        &self,
+        _data: &[u8],
+    ) -> Result<Self::NotificationData, FromGattError> {
         Ok(false)
     }
 
