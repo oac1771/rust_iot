@@ -115,11 +115,10 @@ impl Display for Pong {
     }
 }
 
-pub struct HealthServicePingDescriptor;
+pub struct HealthServicePingHandler;
+pub struct HealthServiceStatusHandler;
 
-pub struct HealthServiceStatusDescriptor;
-
-impl IotCharacteristicReadHandler for HealthServiceStatusDescriptor {
+impl IotCharacteristicReadHandler for HealthServiceStatusHandler {
     type ReadData = Status;
 
     fn deserialize(data: &[u8]) -> Result<Self::ReadData, FromGattError> {
@@ -127,7 +126,7 @@ impl IotCharacteristicReadHandler for HealthServiceStatusDescriptor {
     }
 }
 
-impl IotCharacteristicNotificationHandler for HealthServicePingDescriptor {
+impl IotCharacteristicNotificationHandler for HealthServicePingHandler {
     type NotificationData = Pong;
 
     fn deserialize(data: &[u8]) -> Result<Self::NotificationData, FromGattError> {

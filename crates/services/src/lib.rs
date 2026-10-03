@@ -6,10 +6,10 @@ use core::fmt::Display;
 
 use crate::{
     health::{
-        HEALTH_PING_CHAR_UUID, HEALTH_STATUS_CHAR_UUID, HealthServicePingDescriptor,
-        HealthServiceStatusDescriptor, Pong, Status,
+        HEALTH_PING_CHAR_UUID, HEALTH_STATUS_CHAR_UUID, HealthServicePingHandler,
+        HealthServiceStatusHandler, Pong, Status,
     },
-    storage::{STORAGE_DATA_CHAR_UUID, StorageServiceDataDescriptor},
+    storage::{STORAGE_DATA_CHAR_UUID, StorageServiceDataHandler},
 };
 pub use trouble_host;
 use trouble_host::types::gatt_traits::{AsGatt, FromGatt, FromGattError};
@@ -66,14 +66,14 @@ impl ReadHandler {
         match self {
             Self::Status => {
                 let status =
-                    <HealthServiceStatusDescriptor as IotCharacteristicReadHandler>::deserialize(
+                    <HealthServiceStatusHandler as IotCharacteristicReadHandler>::deserialize(
                         data,
                     )?;
                 Ok(ReadResponse::Status(status))
             }
             Self::Data => {
                 let data =
-                    <StorageServiceDataDescriptor as IotCharacteristicReadHandler>::deserialize(
+                    <StorageServiceDataHandler as IotCharacteristicReadHandler>::deserialize(
                         data,
                     )?;
                 Ok(ReadResponse::Data(data))
@@ -109,7 +109,7 @@ impl WriteHandler {
         match self {
             Self::Data => {
                 let bar =
-                    <StorageServiceDataDescriptor as IotCharacteristicWriteHandler>::serialize(
+                    <StorageServiceDataHandler as IotCharacteristicWriteHandler>::serialize(
                         data,
                     )?;
                 Ok(WriteResponse::Data(bar))
@@ -142,7 +142,7 @@ impl NotificationHandler {
     pub fn deserialize(&self, data: &[u8]) -> Result<NotificationResponse, FromGattError> {
         match self {
             Self::Ping => {
-                let pong = <HealthServicePingDescriptor as IotCharacteristicNotificationHandler>::deserialize(data)?;
+                let pong = <HealthServicePingHandler as IotCharacteristicNotificationHandler>::deserialize(data)?;
                 Ok(NotificationResponse::Ping(pong))
             }
             Self::Other => Ok(NotificationResponse::Other),

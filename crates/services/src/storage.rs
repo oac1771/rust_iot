@@ -29,9 +29,9 @@ impl StorageService {
     }
 }
 
-pub struct StorageServiceDataDescriptor;
+pub struct StorageServiceDataHandler;
 
-impl IotCharacteristicReadHandler for StorageServiceDataDescriptor {
+impl IotCharacteristicReadHandler for StorageServiceDataHandler {
     type ReadData = u8;
 
     fn deserialize(data: &[u8]) -> Result<Self::ReadData, FromGattError> {
@@ -39,7 +39,7 @@ impl IotCharacteristicReadHandler for StorageServiceDataDescriptor {
     }
 }
 
-impl IotCharacteristicWriteHandler for StorageServiceDataDescriptor {
+impl IotCharacteristicWriteHandler for StorageServiceDataHandler {
     type WriteData = u8;
 
     fn serialize(data: &[u8]) -> Result<Self::WriteData, WriteError> {
