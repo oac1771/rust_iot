@@ -30,7 +30,7 @@ trait IotCharacteristicReadHandler {
 
 trait IotCharacteristicWriteHandler {
     type WriteData: AsGatt;
-    fn serialize(data: &[u8]) -> Self::WriteData;
+    fn serialize(data: &[u8]) -> Result<Self::WriteData, WriteError>;
 }
 
 trait IotCharacteristicNotificationHandler {
@@ -62,17 +62,17 @@ impl ReadHandler {
         }
     }
 
-    pub fn deserialize(&self, data: &[u8]) -> ReadResponse {
+    pub fn deserialize(&self, data: &[u8]) -> Result<ReadResponse, FromGattError> {
         match self {
             Self::Status => {
-                let bar = HealthServiceStatusDescriptor::deserialize(data).unwrap();
-                ReadResponse::Status(bar)
+                let status = HealthServiceStatusDescriptor::deserialize(data)?;
+                Ok(ReadResponse::Status(status))
             }
             Self::Data => {
-                let bar = StorageServiceDataDescriptor::deserialize(data).unwrap();
-                ReadResponse::Data(bar)
+                let data = StorageServiceDataDescriptor::deserialize(data)?;
+                Ok(ReadResponse::Data(data))
             }
-            Self::Other => ReadResponse::Other,
+            Self::Other => Ok(ReadResponse::Other),
         }
     }
 }
@@ -88,6 +88,8 @@ pub enum WriteResponse {
     Other,
 }
 
+pub enum WriteError {}
+
 impl WriteHandler {
     pub fn new(uuid: Uuid) -> Self {
         if uuid == STORAGE_DATA_CHAR_UUID {
@@ -97,13 +99,13 @@ impl WriteHandler {
         }
     }
 
-    pub fn serialize(&self, data: &[u8]) -> WriteResponse {
+    pub fn serialize(&self, data: &[u8]) -> Result<WriteResponse, WriteError> {
         match self {
             Self::Data => {
-                let bar = StorageServiceDataDescriptor::serialize(data);
-                WriteResponse::Data(bar)
+                let bar = StorageServiceDataDescriptor::serialize(data)?;
+                Ok(WriteResponse::Data(bar))
             }
-            Self::Other => WriteResponse::Other,
+            Self::Other => Ok(WriteResponse::Other),
         }
     }
 }
@@ -128,13 +130,13 @@ impl NotificationHandler {
         }
     }
 
-    pub fn deserialize(&self, data: &[u8]) -> NotificationResponse {
+    pub fn deserialize(&self, data: &[u8]) -> Result<NotificationResponse, FromGattError> {
         match self {
             Self::Ping => {
-                let pong = HealthServicePingDescriptor::deserialize(data).unwrap();
-                NotificationResponse::Ping(pong)
+                let pong = HealthServicePingDescriptor::deserialize(data)?;
+                Ok(NotificationResponse::Ping(pong))
             }
-            Self::Other => NotificationResponse::Other,
+            Self::Other => Ok(NotificationResponse::Other),
         }
     }
 }

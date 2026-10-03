@@ -1,4 +1,4 @@
-use crate::{IotCharacteristicReadHandler, IotCharacteristicWriteHandler};
+use crate::{IotCharacteristicReadHandler, IotCharacteristicWriteHandler, WriteError};
 
 use super::uuid_to_ble_bytes;
 use log::info;
@@ -42,7 +42,7 @@ impl IotCharacteristicReadHandler for StorageServiceDataDescriptor {
 impl IotCharacteristicWriteHandler for StorageServiceDataDescriptor {
     type WriteData = u8;
 
-    fn serialize(data: &[u8]) -> Self::WriteData {
-        42
+    fn serialize(data: &[u8]) -> Result<Self::WriteData, WriteError> {
+        Ok(42)
     }
 }
