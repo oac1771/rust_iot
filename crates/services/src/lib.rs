@@ -65,11 +65,17 @@ impl ReadHandler {
     pub fn deserialize(&self, data: &[u8]) -> Result<ReadResponse, FromGattError> {
         match self {
             Self::Status => {
-                let status = HealthServiceStatusDescriptor::deserialize(data)?;
+                let status =
+                    <HealthServiceStatusDescriptor as IotCharacteristicReadHandler>::deserialize(
+                        data,
+                    )?;
                 Ok(ReadResponse::Status(status))
             }
             Self::Data => {
-                let data = StorageServiceDataDescriptor::deserialize(data)?;
+                let data =
+                    <StorageServiceDataDescriptor as IotCharacteristicReadHandler>::deserialize(
+                        data,
+                    )?;
                 Ok(ReadResponse::Data(data))
             }
             Self::Other => Ok(ReadResponse::Other),
@@ -102,7 +108,10 @@ impl WriteHandler {
     pub fn serialize(&self, data: &[u8]) -> Result<WriteResponse, WriteError> {
         match self {
             Self::Data => {
-                let bar = StorageServiceDataDescriptor::serialize(data)?;
+                let bar =
+                    <StorageServiceDataDescriptor as IotCharacteristicWriteHandler>::serialize(
+                        data,
+                    )?;
                 Ok(WriteResponse::Data(bar))
             }
             Self::Other => Ok(WriteResponse::Other),
@@ -133,7 +142,7 @@ impl NotificationHandler {
     pub fn deserialize(&self, data: &[u8]) -> Result<NotificationResponse, FromGattError> {
         match self {
             Self::Ping => {
-                let pong = HealthServicePingDescriptor::deserialize(data)?;
+                let pong = <HealthServicePingDescriptor as IotCharacteristicNotificationHandler>::deserialize(data)?;
                 Ok(NotificationResponse::Ping(pong))
             }
             Self::Other => Ok(NotificationResponse::Other),
