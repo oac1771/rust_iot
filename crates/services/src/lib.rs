@@ -23,21 +23,6 @@ const fn uuid_to_ble_bytes(uuid: &uuid::Uuid) -> [u8; 16] {
     ]
 }
 
-pub trait IotCharacteristic {
-    type ReadData: FromGatt + Display;
-    type NotificationData: FromGatt + Display;
-    type Id;
-    type WriteData;
-
-    fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError>;
-    fn deserialize_notification_response(
-        &self,
-        data: &[u8],
-    ) -> Result<Self::NotificationData, FromGattError>;
-    fn serialize_write_data(&self, data: Self::WriteData) -> impl AsGatt;
-    fn id(&self) -> Self::Id;
-}
-
 trait IotCharacteristicReadHandler {
     type ReadData: FromGatt + Display;
     fn deserialize(data: &[u8]) -> Result<Self::ReadData, FromGattError>;
@@ -78,7 +63,7 @@ impl ReadHandler {
     }
 
     pub fn deserialize(&self, data: &[u8]) -> ReadResponse {
-        let response = match self {
+        match self {
             Self::Status => {
                 let bar = HealthServiceStatusDescriptor::deserialize(data).unwrap();
                 ReadResponse::Status(bar)
@@ -88,9 +73,7 @@ impl ReadHandler {
                 ReadResponse::Data(bar)
             }
             Self::Other => ReadResponse::Other,
-        };
-
-        response
+        }
     }
 }
 
@@ -146,14 +129,12 @@ impl NotificationHandler {
     }
 
     pub fn deserialize(&self, data: &[u8]) -> NotificationResponse {
-        let response = match self {
+        match self {
             Self::Ping => {
                 let pong = HealthServicePingDescriptor::deserialize(data).unwrap();
                 NotificationResponse::Ping(pong)
             }
             Self::Other => NotificationResponse::Other,
-        };
-
-        response
+        }
     }
 }

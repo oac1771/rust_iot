@@ -1,8 +1,6 @@
 use core::fmt::Display;
 
-use crate::{
-    IotCharacteristic, IotCharacteristicNotificationHandler, IotCharacteristicReadHandler,
-};
+use crate::{IotCharacteristicNotificationHandler, IotCharacteristicReadHandler};
 
 use super::uuid_to_ble_bytes;
 use log::{error, info};
@@ -19,15 +17,10 @@ const HEALTH_SERVICE_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a1
 pub const HEALTH_STATUS_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a10001);
 pub const HEALTH_PING_CHAR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a10002);
 
-pub const HEALTH_STATUS_DESCRIPTOR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a11001);
-pub const HEALTH_PING_DESCRIPTOR_UUID: Uuid = Uuid::from_u128(0xc7d9a5b06c1a4b2c9b3a3d45e6a11002);
-
 #[gatt_service(uuid = uuid_to_ble_bytes(&HEALTH_SERVICE_UUID))]
 pub struct HealthService {
-    #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_DESCRIPTOR_UUID), read, value = true, type = bool)]
     #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_STATUS_CHAR_UUID), read, value=Status { up: true })]
     pub status: Status,
-    #[descriptor(uuid = uuid_to_ble_bytes(&HEALTH_PING_DESCRIPTOR_UUID), read, value = true, type = bool)]
     #[characteristic(uuid = uuid_to_ble_bytes(&HEALTH_PING_CHAR_UUID), notify)]
     pub ping: Pong,
 }
@@ -122,63 +115,9 @@ impl Display for Pong {
     }
 }
 
-#[derive(Debug, Clone)]
 pub struct HealthServicePingDescriptor;
 
-impl IotCharacteristic for HealthServicePingDescriptor {
-    type ReadData = Pong;
-    type Id = Uuid;
-    type WriteData = ();
-    type NotificationData = Pong;
-
-    fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError> {
-        <Self::ReadData as FromGatt>::from_gatt(data)
-    }
-
-    fn deserialize_notification_response(
-        &self,
-        data: &[u8],
-    ) -> Result<Self::NotificationData, FromGattError> {
-        <Self::NotificationData as FromGatt>::from_gatt(data)
-    }
-
-    fn serialize_write_data(&self, _data: Self::WriteData) -> impl AsGatt {
-        true
-    }
-
-    fn id(&self) -> Self::Id {
-        HEALTH_PING_DESCRIPTOR_UUID
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct HealthServiceStatusDescriptor;
-
-impl IotCharacteristic for HealthServiceStatusDescriptor {
-    type ReadData = Status;
-    type Id = Uuid;
-    type WriteData = ();
-    type NotificationData = bool;
-
-    fn deserialize_read_response(&self, data: &[u8]) -> Result<Self::ReadData, FromGattError> {
-        <Self::ReadData as FromGatt>::from_gatt(data)
-    }
-
-    fn deserialize_notification_response(
-        &self,
-        _data: &[u8],
-    ) -> Result<Self::NotificationData, FromGattError> {
-        Ok(false)
-    }
-
-    fn serialize_write_data(&self, _data: Self::WriteData) -> impl AsGatt {
-        true
-    }
-
-    fn id(&self) -> Self::Id {
-        HEALTH_STATUS_DESCRIPTOR_UUID
-    }
-}
 
 impl IotCharacteristicReadHandler for HealthServiceStatusDescriptor {
     type ReadData = Status;
