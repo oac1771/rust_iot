@@ -1,6 +1,8 @@
 use core::fmt::Display;
 
-use crate::IotCharacteristic;
+use crate::{
+    IotCharacteristic, IotCharacteristicNotificationHandler, IotCharacteristicReadHandler,
+};
 
 use super::uuid_to_ble_bytes;
 use log::{error, info};
@@ -152,7 +154,6 @@ impl IotCharacteristic for HealthServicePingDescriptor {
 #[derive(Debug, Clone)]
 pub struct HealthServiceStatusDescriptor;
 
-
 impl IotCharacteristic for HealthServiceStatusDescriptor {
     type ReadData = Status;
     type Id = Uuid;
@@ -176,5 +177,21 @@ impl IotCharacteristic for HealthServiceStatusDescriptor {
 
     fn id(&self) -> Self::Id {
         HEALTH_STATUS_DESCRIPTOR_UUID
+    }
+}
+
+impl IotCharacteristicReadHandler for HealthServiceStatusDescriptor {
+    type ReadData = Status;
+
+    fn deserialize(data: &[u8]) -> Result<Self::ReadData, FromGattError> {
+        <Self::ReadData as FromGatt>::from_gatt(data)
+    }
+}
+
+impl IotCharacteristicNotificationHandler for HealthServicePingDescriptor {
+    type NotificationData = Pong;
+
+    fn deserialize(data: &[u8]) -> Result<Self::NotificationData, FromGattError> {
+        <Self::NotificationData as FromGatt>::from_gatt(data)
     }
 }

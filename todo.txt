@@ -1,6 +1,4 @@
-figure out how to do descriptors properly
-Maybe change led service to storage( practice reading and writing to device )
-    - using embedded storage
+have different known descriptors depending on read/write/notify traits?
 
 example:
 https://github.com/embassy-rs/trouble/tree/main/examples/esp32
