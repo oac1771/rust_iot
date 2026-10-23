@@ -108,11 +108,11 @@ impl WriteHandler {
     pub fn serialize(&self, data: &[u8]) -> Result<WriteResponse, WriteError> {
         match self {
             Self::Data => {
-                let bar =
+                let response_data =
                     <StorageServiceDataHandler as IotCharacteristicWriteHandler>::serialize(
                         data,
                     )?;
-                Ok(WriteResponse::Data(bar))
+                Ok(WriteResponse::Data(response_data))
             }
             Self::Other => Ok(WriteResponse::Other),
         }

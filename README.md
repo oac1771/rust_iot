@@ -27,3 +27,5 @@ cargo espflash flash --release --package iot --target riscv32imc-unknown-none-el
 [embassy book](https://embassy.dev/book/index.html#_introduction)
 [rust on esp book](https://docs.esp-rs.org/book/introduction.html)
 [rust on esp book no_std training](https://docs.esp-rs.org/no_std-training/01_intro.html)
+
+https://embassy.dev/trouble/#_resource_configuration

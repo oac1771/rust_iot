@@ -25,6 +25,9 @@ log = { workspace = true }
 static_cell = { workspace = true }
 trouble-host = { workspace = true, features = ["default-packet-pool-mtu-255", "scan", "log", "gatt"] }
 
+postcard = { workspace = true }
+serde = { workspace = true, default-features = false }
+
 # for 'ble_bas_peripheral_bonding'
 embedded-hal = { workspace = true }
 esp-storage = { workspace = true }

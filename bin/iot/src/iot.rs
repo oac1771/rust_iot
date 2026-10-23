@@ -17,6 +17,7 @@ where
     let stack = trouble_host::new(controller, &mut resources).set_random_address(address);
     let Host {
         mut peripheral,
+        central,
         runner,
         ..
     } = stack.build();

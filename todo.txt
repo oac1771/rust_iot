@@ -1,4 +1,4 @@
-have different known descriptors depending on read/write/notify traits?
+Try using post card in 
 
 example:
 https://github.com/embassy-rs/trouble/tree/main/examples/esp32

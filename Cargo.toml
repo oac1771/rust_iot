@@ -33,6 +33,9 @@ sequential-storage = { version = "5.0.0" }
 static_cell = "2"
 trouble-host = { version = "0.6.0" }
 
+postcard = "1.0.0"
+serde = { version = "1.0.*", default-features = false }
+
 # Workspace
 server = { path = "crates/server" }
 services = { path = "crates/services" }
